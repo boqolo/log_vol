@@ -26,8 +26,8 @@ defmodule LogVol.MixProject do
   [
    files: ["lib", "mix.exs", "README.md"],
    maintainers: ["Rayyan Abdi"],
-   licenses: ["Apache 2.0"],
-   links: %{"GitHub" => "https://github.com/boqolo/log",
+   licenses: ["GNU GPL 3.0"],
+   links: %{"GitHub" => "https://github.com/boqolo/log_vol",
             "Docs" => "http://hexdocs.pm/log_vol/"}
    ]
  end

@@ -1,5 +1,9 @@
 # LogVol
 
+Is your system too quiet or too loud? Whether you want
+your code to speak up or shut up, control the volume of
+logs with LogVol, a library for increased logging resolution.
+
 ## Personal TODO
 1. add `typespecs` for module functions
 2. Better docs?
