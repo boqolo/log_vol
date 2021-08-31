@@ -1,7 +1,7 @@
 defmodule LogVol do
   @moduledoc """
   Documentation for `LogVol`, a wrapper around Elixir's
-  native `Logger` with volume controls.
+  native `Logger` with global volume control.
   """
 
   @app :log_vol
@@ -25,12 +25,12 @@ defmodule LogVol do
       :quiet
       :silent
 
-  Returns `:ok` if successful, else `{:error, reason}`.
+  Returns `:ok` if successful or raises if given an invalid option.
 
   """
-  def set(volume) do
+  def set!(volume) do
     unless Enum.member?(@supported_volumes, volume) do
-      {:error, "Unsupported volume. Try iex> h LogVol.set"}
+      raise "Unsupported volume. Try iex> h LogVol.set"
     else
       Application.put_env(@app, :volume, volume)
     end
