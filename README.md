@@ -30,7 +30,7 @@ There are currently 5 supported log volumes:
   :silent
 ```
       
-Set `LogVol`'s global volume with `LogVol.set/1`, like so: 
+Set `LogVol`'s global volume at runtime with `LogVol.set/1`, like so: 
 
 ```elixir
 LogVol.set :verbose
