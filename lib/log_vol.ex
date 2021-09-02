@@ -12,8 +12,23 @@ defmodule LogVol do
     :quiet,
     :silent
   ]
+  @supported_levels [
+    :debug,
+    :info,
+    :warn,
+    :error
+  ]
 
   require Logger
+
+  @doc """
+  Configures the underlying Elixir `Logger`. This is a wrapper
+  for `configure/1` in the `Logger` module and therefore
+  takes the same options [found in the docs here](https://hexdocs.pm/logger/master/Logger.html#module-runtime-configuration).
+  """
+  def configure(options) do
+    Logger.configure(options)
+  end
 
   @doc """
   Sets the logging volume for the application. There are
@@ -23,16 +38,62 @@ defmodule LogVol do
       :verbose
       :normal
       :quiet
-      :silent
+      :silent # all logs will be suppressed
 
-  Returns `:ok` if successful or raises if given an invalid option.
+  Returns `:ok` if successful or returns `{:error, reason}`.
 
   """
-  def set!(volume) do
+  def set(volume) do
     unless Enum.member?(@supported_volumes, volume) do
-      raise "Unsupported volume. Try iex> h LogVol.set"
+      {:error,
+        "Unsupported volume. Try #{Enum.join(@supported_volumes, ", ")}"}
     else
       Application.put_env(@app, :volume, volume)
+    end
+  end
+
+  @doc """
+  Same as `set/1` except raises if unsuccessful.
+  """
+  def set!(volume) do
+    case set(volume) do
+      :ok -> :ok
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
+  Sets the logging level for the application.
+  Attempting to log any message with severity less than the given
+  level will cause the message to be ignored. This is a
+  convenience for `LogVol.configure(level: some_level)`.
+
+  Whereas `configure/1` supports all the options of
+  [`Logger.configure/1`](https://hexdocs.pm/logger/master/Logger.html#configure/1), this function only accepts LogVol's
+  supported levels along with (per the [docs here](https://hexdocs.pm/logger/master/Logger.html#module-runtime-configuration)):
+
+      :all - all messages will be logged, conceptually identical to :debug
+      :none - no messages will be logged at all
+
+  Returns `:ok` if successful or `{:error, reason}` if unsuccessful.
+
+  """
+  def set_level(level) do
+    valid_levels = @supported_levels ++ [:all, :none]
+    unless Enum.member?(valid_levels, level) do
+      {:error, "Unsupported level. Try #{Enum.join(valid_levels, ", ")}"}
+    else
+      Logger.configure(level: level)
+    end
+  end
+
+  @doc """
+  Same as `set_level/1` except raises if unsuccessful.
+  """
+  def set_level!(level) do
+    case set_level(level) do
+      :ok -> :ok
+      {:error, reason} -> raise reason
     end
   end
 
@@ -71,7 +132,8 @@ defmodule LogVol do
       iex> LogVol.set :verbose
       :ok
       iex> LogVol.debug("normal msg", verbose: "verbose msg")
-      :noop
+      timestamp [debug] verbose msg
+      :ok
       iex> LogVol.debug(verbose: "verbose msg")
       timestamp [debug] verbose msg
       :ok
@@ -87,15 +149,15 @@ defmodule LogVol do
     string |> debug([])
   end
 
-  def debug(options) when is_list(options) do
-    Keyword.get(options, :normal) |> debug(options)
+  def debug(messages) when is_list(messages) do
+    Keyword.get(messages, :normal) |> debug(messages)
   end
 
   @doc """
   See docs for `debug/1.`
   """
-  def debug(string, options) do
-    handle_log(:debug, string, options)
+  def debug(string, messages) do
+    handle_log(:debug, string, messages)
   end
 
   @doc """
@@ -120,11 +182,12 @@ defmodule LogVol do
       iex> LogVol.set :verbose
       :ok
       iex> LogVol.info("normal msg", verbose: "verbose msg")
-      :noop
+      timestamp [info] verbose msg
+      :ok
       iex> LogVol.info(verbose: "verbose msg")
       timestamp [info] verbose msg
       :ok
-      iex> LogVol.info(very_verbose: "very verbose msg")
+      iex> LogVol.info(quiet: "quiet msg")
       :noop
       iex> LogVol.info("normal msg")
       :noop
@@ -136,15 +199,15 @@ defmodule LogVol do
     string |> info([])
   end
 
-  def info(options) when is_list(options) do
-    Keyword.get(options, :normal) |> info(options)
+  def info(messages) when is_list(messages) do
+    Keyword.get(messages, :normal) |> info(messages)
   end
 
   @doc """
   See docs for `info/1.`
   """
-  def info(string, options) do
-    handle_log(:info, string, options)
+  def info(string, messages) do
+    handle_log(:info, string, messages)
   end
 
   @doc """
@@ -169,7 +232,8 @@ defmodule LogVol do
       iex> LogVol.set :verbose
       :ok
       iex> LogVol.warn("normal msg", verbose: "verbose msg")
-      :noop
+      timestamp [warn] verbose msg
+      :ok
       iex> LogVol.warn(verbose: "verbose msg")
       timestamp [warn] verbose msg
       :ok
@@ -185,15 +249,15 @@ defmodule LogVol do
     string |> warn([])
   end
 
-  def warn(options) when is_list(options) do
-    Keyword.get(options, :normal) |> warn(options)
+  def warn(messages) when is_list(messages) do
+    Keyword.get(messages, :normal) |> warn(messages)
   end
 
   @doc """
   See docs for `warn/1.`
   """
-  def warn(string, options) do
-    handle_log(:warn, string, options)
+  def warn(string, messages) do
+    handle_log(:warn, string, messages)
   end
 
   @doc """
@@ -218,7 +282,8 @@ defmodule LogVol do
       iex> LogVol.set :verbose
       :ok
       iex> LogVol.error("normal msg", verbose: "verbose msg")
-      :noop
+      timestamp [error] verbose msg
+      :ok
       iex> LogVol.error(verbose: "verbose msg")
       timestamp [error] verbose msg
       :ok
@@ -234,15 +299,36 @@ defmodule LogVol do
     string |> error([])
   end
 
-  def error(options) when is_list(options) do
-    Keyword.get(options, :normal) |> error(options)
+  def error(messages) when is_list(messages) do
+    Keyword.get(messages, :normal) |> error(messages)
   end
 
   @doc """
   See docs for `error/1.`
   """
-  def error(string, options) do
-    handle_log(:error, string, options)
+  def error(string, messages) do
+    handle_log(:error, string, messages)
+  end
+
+  @doc """
+  Logs the given messages at the given level, where level is
+  an atom from the following list of supported log levels:
+
+      #{Enum.join(@supported_levels, "\n")}
+
+  ## Examples
+
+      iex> LogVol.volume
+      :normal
+      iex> LogVol.log(:debug, normal: "normal msg") # same as LogVol.debug("normal msg")
+      timestamp [debug] normal msg
+      :ok
+      iex> LogVol.log(:error, quiet: "quiet msg", verbose: "verbose msg")
+      :noop
+
+  """
+  def log(level, messages) when is_list(messages) do
+    handle_log(level, Keyword.get(messages, :normal) , messages)
   end
 
   defp log_or_ignore(nil, _level) do
@@ -259,15 +345,15 @@ defmodule LogVol do
     end
   end
 
-  defp handle_log(level, string, options) do
+  defp handle_log(level, string, messages) do
     case Application.fetch_env!(@app, :volume) do
       :very_verbose ->
-        Keyword.get(options, :very_verbose) |> log_or_ignore(level)
+        Keyword.get(messages, :very_verbose) |> log_or_ignore(level)
       :verbose ->
-        Keyword.get(options, :verbose) |> log_or_ignore(level)
+        Keyword.get(messages, :verbose) |> log_or_ignore(level)
       :normal -> string |> log_or_ignore(level)
       :quiet ->
-        Keyword.get(options, :quiet) |> log_or_ignore(level)
+        Keyword.get(messages, :quiet) |> log_or_ignore(level)
       _ -> :noop
     end
   end
