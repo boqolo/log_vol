@@ -23,7 +23,7 @@ defmodule LogVol do
 
   @doc """
   Configures the underlying Elixir `Logger`. This is a wrapper
-  for `configure/1` in the `Logger` module and therefore
+  for `Logger.configure/1` and therefore
   takes the same options [found in the docs here](https://hexdocs.pm/logger/master/Logger.html#module-runtime-configuration).
   """
   def configure(options) do
@@ -68,12 +68,16 @@ defmodule LogVol do
   level will cause the message to be ignored. This is a
   convenience for `LogVol.configure(level: some_level)`.
 
+  ## Usage
+
   Whereas `configure/1` supports all the options of
   [`Logger.configure/1`](https://hexdocs.pm/logger/master/Logger.html#configure/1), this function only accepts LogVol's
-  supported levels along with (per the [docs here](https://hexdocs.pm/logger/master/Logger.html#module-runtime-configuration)):
+  supported levels along with:
 
       :all - all messages will be logged, conceptually identical to :debug
       :none - no messages will be logged at all
+
+  See `configure/1` for more details on runtime configuration.
 
   Returns `:ok` if successful or `{:error, reason}` if unsuccessful.
 
