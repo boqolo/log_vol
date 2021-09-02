@@ -4,7 +4,7 @@ defmodule LogVol.MixProject do
   def project do
     [
       app: :log_vol,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 1.12",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env() == :prod,
