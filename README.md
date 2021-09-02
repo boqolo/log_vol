@@ -80,7 +80,7 @@ by adding `log_vol` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:log_vol, "~> 0.0.1"}
+    {:log_vol, "~> 0.0.2"}
   ]
 end
 ```
